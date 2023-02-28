@@ -23,7 +23,10 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE TABLE IF NOT EXISTS vendors (
     id int not null auto_increment primary key,
-    name varchar(32) not null
+    name varchar(32) not null,
+    is_active BOOLEAN not null,
+    is_active_tinyint TINYINT(1) not null,
+    is_active_bit_one BIT(1) not null
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS vendor_categories (
@@ -60,7 +63,8 @@ DELETE FROM categories;
 DELETE FROM user;
 
 INSERT INTO categories (id, name) VALUES (1, "Junk");
-INSERT INTO vendors (id, name) VALUES (1, "Acme Corp");
+INSERT INTO vendors (id, name, is_active, is_active_tinyint, is_active_bit_one)
+    VALUES (1, "Acme Corp", 1, 1, 1);
 INSERT INTO products (id, name, cat_id, vendor_id)
     VALUES (1, "Bobcat Statue", 1, 1);
 INSERT INTO products (id, name, cat_id, vendor_id, price)
@@ -158,6 +162,7 @@ def setup_mysql():
         kwargs["port"] = int(bits.port)
     db = MySQLdb.connect(**kwargs)
     cursor = db.cursor()
+    cursor.execute("DROP DATABASE {};".format(bits.database))
     cursor.execute("CREATE DATABASE IF NOT EXISTS {};".format(bits.database))
     cursor.execute("USE {};".format(bits.database))
     cursor.execute(MYSQL_SQL)

@@ -2,7 +2,7 @@ import pytest
 import sqlite_utils
 from sqlite_utils.db import ForeignKey
 
-from .shared import POSTGRESQL_TEST_DB_CONNECTION, all_databases, psycopg2
+from .shared import POSTGRESQL_TEST_DB_CONNECTION, MYSQL_TEST_DB_CONNECTION, all_databases, psycopg2, MySQLdb
 
 
 @all_databases
@@ -118,5 +118,33 @@ def test_postgres_schema(tmpdir, cli_runner):
         "CREATE TABLE [other_schema_categories] (\n"
         "   [id] INTEGER PRIMARY KEY,\n"
         "   [name] TEXT\n"
+        ")"
+    )
+
+@pytest.mark.skipif(MySQLdb is None, reason="pip install mysqlclient")
+def test_mysql_bools(tmpdir, cli_runner):
+    """Test db-to-sqlite turns both BIT(1) and TINYINT(1) into INTEGER.
+
+    MySQL users may use varius storage types to encode booleans but TINYINT and
+    BIT(1) are the most common with the former being probably more common. Prior
+    to this test, db-to-sqlite handled TINYINT fine but turned BIT(1) into
+    BLOB which made querying very hard if not impossible. The underlying reason
+    for this is that SQLAlchemy infers BIT(1) columns as bytes.
+
+    Related GitHub Issue: https://github.com/simonw/db-to-sqlite/issues/49"""
+    db_path = str(tmpdir / "test_sql.db")
+    connection = MYSQL_TEST_DB_CONNECTION
+    result = cli_runner(
+        [connection, db_path, "--all"]
+    )
+    assert result.exit_code == 0
+    db = sqlite_utils.Database(db_path)
+    assert db.tables[5].schema == (
+        "CREATE TABLE [vendors] (\n"
+        "   [id] INTEGER PRIMARY KEY,\n"
+        "   [name] TEXT,\n"
+        "   [is_active] INTEGER,\n"
+        "   [is_active_tinyint] INTEGER,\n"
+        "   [is_active_bit_one] INTEGER\n"
         ")"
     )

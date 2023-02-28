@@ -112,6 +112,7 @@ def cli(
             results = db_conn.execute(text("select * from {}".format(table_quoted)))
             redact_these = redact_columns.get(table) or set()
             rows = (redacted_dict(r, redact_these) for r in results)
+            rows = (convert_bytes_to_ints(r) for r in rows)
             # Make sure generator is not empty
             try:
                 first = next(rows)
@@ -188,6 +189,13 @@ def redacted_dict(row, redact):
         if key in d:
             d[key] = "***"
     return d
+
+
+def convert_bytes_to_ints(row):
+    for key in row:
+        if type(row[key]) == bytes:
+            row[key] = int.from_bytes(row[key])
+    return row
 
 
 if __name__ == "__main__":
