@@ -194,7 +194,7 @@ def redacted_dict(row, redact):
 def convert_bytes_to_ints(row):
     for key in row:
         if type(row[key]) == bytes:
-            row[key] = int.from_bytes(row[key])
+            row[key] = int.from_bytes(row[key], byteorder="big")
     return row
 
 
